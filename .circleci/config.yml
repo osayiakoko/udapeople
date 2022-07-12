@@ -304,6 +304,45 @@ jobs:
       - destroy-environment
       - revert-migration
 
+  smoke-test:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - install_nodejs
+      - install_awscli
+      - run:
+          name: Get backend url
+          command: |
+            API_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+            export API_URL=http://${API_IP}:3030
+            echo ${API_URL}
+      - run:
+          name: Backend smoke test.
+          command: |
+            if curl -s $API_URL/api/status | grep "ok"
+            then
+              exit 0
+            else
+              exit 1
+            fi
+      - run:
+          name: Frontend smoke test.
+          command: |
+            URL=http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com
+            echo ${URL}
+            if curl -s ${URL} | grep "Welcome"
+            then
+              exit 1
+            else
+              exit 1
+            fi
+      - destroy-environment
+      - revert-migration
+
 workflows:
   default:
     jobs:
@@ -330,8 +369,8 @@ workflows:
           requires: [run-migrations]
       - deploy-backend:
           requires: [run-migrations]
-      # - smoke-test:
-      #     requires: [deploy-backend, deploy-frontend]
+      - smoke-test:
+          requires: [deploy-backend, deploy-frontend]
       # - cloudfront-update:
       #     requires: [smoke-test]
       # - cleanup:
