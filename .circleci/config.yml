@@ -218,6 +218,7 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - install_aws_cli
       - run:
           name: Run migrations
           command: |
@@ -229,7 +230,7 @@ jobs:
           command: |   
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
-                curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+                curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
       - destroy-environment 
       - revert-migration
