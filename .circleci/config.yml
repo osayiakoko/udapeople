@@ -33,6 +33,21 @@ commands:
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             sudo ./aws/install
+
+  revert-migration:
+    description: Revert migration.   
+    steps:
+      - run:
+          name: Revert migrations
+          when: on_fail
+          command: |
+            export SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7})
+            if(( ${SUCCESS}==1 )); 
+            then
+              cd ~/project/backend
+              npm install
+              npm run migration:revert
+            fi
      
 jobs:
   build-frontend:
@@ -133,6 +148,7 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
+      - run: yum -y install tar gzip 
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -142,7 +158,7 @@ jobs:
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
               --tags project=udapeople
       - run:
-          name: Ensure front-end infrastructure exist
+          name: Ensure front-end infrastructure exists
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
@@ -188,6 +204,32 @@ jobs:
             ansible-playbook -i inventory.txt configure-server.yml
       - destroy-environment   
 
+  run-migrations:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run:
+          name: Run migrations
+          command: |
+            cd backend
+            npm install
+            npm run migrations > migrations_dump.txt
+      - run:
+          name: Send migration results to memstash
+          command: |
+            # Your code here
+            exit 1
+      - run:
+        name: Send migration status to kvdb.io
+        command: |   
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
+            then
+                curl https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+            fi
+      - destroy-environment 
+      - revert-migration
+
 workflows:
   default:
     jobs:
@@ -208,8 +250,8 @@ workflows:
               only: [master]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
-      # - run-migrations:
-      #     requires: [configure-infrastructure]
+      - run-migrations:
+          requires: [configure-infrastructure]
       # - deploy-frontend:
       #     requires: [run-migrations]
       # - deploy-backend:
