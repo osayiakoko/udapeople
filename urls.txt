@@ -1,2 +1,5 @@
 Github url:
 https://github.com/osayiakoko/auto-deploy-superpowers
+
+S3 bucket url:
+http://udapeople-c60b5ad.s3-website-us-east-1.amazonaws.com
