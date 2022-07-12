@@ -323,7 +323,7 @@ jobs:
 
             if curl -s $API_URL/api/status | grep "ok"
             then
-              exit 1
+              exit 0
             else
               exit 1
             fi
@@ -371,27 +371,24 @@ jobs:
       - checkout
       - install_aws_cli
       - run:
-          name: Get old stack workflow id
+          name: Remove old stacks and files
           command: |
             export STACKS=($(aws cloudformation list-stacks \
                 --query "StackSummaries[*].StackName" \
                 --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
             echo Stack names: "${STACKS[@]}"
-            export OldWorkflowID=$(curl --insecure https://kvdb.io/CqqpYNHYwhgT2ZSMyHKCKG/old_workflow_id)
-            echo Old Workflow ID: $OldWorkflowID 
-      - run:
-          name: Remove old stacks and files
-          command: |
+
             export OldWorkflowID=$(curl --insecure https://kvdb.io/CqqpYNHYwhgT2ZSMyHKCKG/old_workflow_id)
             echo Old Workflow ID: $OldWorkflowID 
             
-            if [[ "${STACKS[@]}" =~ $OldWorkflowID ]]
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
+              echo "Condition got to then"
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
             else
-              echo "Did not get here"
+              echo "Condition got to else"
             fi
 
 workflows:
