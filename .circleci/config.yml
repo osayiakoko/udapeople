@@ -244,7 +244,7 @@ jobs:
       - attach_workspace:
           at: ~/
       - install_node_js
-      - install_awscli
+      - install_aws_cli
       - install_ansible
       - run:
           name: Get backend url
@@ -280,8 +280,8 @@ jobs:
           fingerprints: ["1c:1a:84:d9:da:6a:0d:2b:78:3f:f5:3d:a1:e5:ac:94"]
       - attach_workspace:
           at: ~/
-      - install_nodejs
-      - install_awscli
+      - install_node_js
+      - install_aws_cli
       - install_ansible
       - run:
           name: Deploy backend
