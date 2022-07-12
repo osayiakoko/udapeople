@@ -370,7 +370,7 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
-      - install_awscli
+      - install_aws_cli
       - run:
           name: Get old stack workflow id
           command: |
