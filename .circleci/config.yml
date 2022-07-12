@@ -50,7 +50,7 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            export SUCCESS=$(curl --insecure  https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7})
+            export SUCCESS=$(curl --insecure  https://kvdb.io/CqqpYNHYwhgT2ZSMyHKCKG/migration_${CIRCLE_WORKFLOW_ID:0:7})
             if(( ${SUCCESS}==1 )); 
             then
               cd ~/project/backend
@@ -230,7 +230,7 @@ jobs:
           command: |   
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
-                curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+                curl --insecure https://kvdb.io/CqqpYNHYwhgT2ZSMyHKCKG/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
       - destroy-environment 
       - revert-migrations
@@ -312,7 +312,7 @@ jobs:
       - install_node_js
       - install_aws_cli
       - run:
-          name: Get backend url
+          name: Backend smoke test.
           command: |
             API_IP=$(aws ec2 describe-instances \
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
@@ -320,9 +320,7 @@ jobs:
               --output text)
             export API_URL=http://${API_IP}:3030
             echo ${API_URL}
-      - run:
-          name: Backend smoke test.
-          command: |
+
             if curl -s $API_URL/api/status | grep "ok"
             then
               exit 0
@@ -342,7 +340,7 @@ jobs:
             fi
       - destroy-environment
       - revert-migrations
-      
+
   cloudfront-update:
     docker:
       - image: amazon/aws-cli
@@ -355,7 +353,7 @@ jobs:
             list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
             --no-paginate --output text)
             echo "Old Wokflow ID: $OLD_WORKFLOW_ID"
-            curl https://kvdb.io/${KVDB_BUCKET}/old_workflow_id -d "${OLD_WORKFLOW_ID}"
+            curl https://kvdb.io/CqqpYNHYwhgT2ZSMyHKCKG/old_workflow_id -d "${OLD_WORKFLOW_ID}"
       - run:
           name: Update cloudfront distribution
           command: |
@@ -365,6 +363,25 @@ jobs:
             --stack-name InitialStack
       - destroy-environment
       - revert-migrations
+
+cleanup:
+    docker:
+      # Docker image here
+    steps:
+      # Checkout code from git
+      - run:
+          name: Get old stack workflow id
+          command: |
+            # your code here
+            export OldWorkflowID="the id here"
+            export STACKS=[] #put the list of stacks here
+      - run:
+          name: Remove old stacks and files
+          command: |
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+            then
+              # your code here
+            fi
 
 workflows:
   default:
