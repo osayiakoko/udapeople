@@ -8,11 +8,10 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            aws s3 rb s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --force
-            aws cloudformation delete-stack \
-            --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" 
-            aws cloudformation delete-stack \
-            --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" 
+            echo "Destroying environment: ${CIRCLE_WORKFLOW_ID:0:7}"
+            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+            aws cloudformation delete-stack --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" 
+            aws cloudformation delete-stack --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" 
   
   install_ansible:
     description: Install Ansible
@@ -324,7 +323,7 @@ jobs:
 
             if curl -s $API_URL/api/status | grep "ok"
             then
-              exit 0
+              exit 1
             else
               exit 1
             fi
@@ -391,6 +390,8 @@ jobs:
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+            else
+              echo "Did not get here"
             fi
 
 workflows:
